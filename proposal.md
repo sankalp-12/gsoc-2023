@@ -7,24 +7,24 @@
 1. **[Abstract](#1-abstract)**
 2. **[Technical details](#2-technical-details)**
 	2.1. [Forensic Container Checkpointing](#21-forensic-container-checkpointing)
-	2.2. [Analysing the `checkpoint/` Directory](#22-analysing-the-`checkpoint/`-directory)
+	2.2. [Analysing the `checkpoint/` Directory](#22-analysing-the-checkpoint-directory)
 	&nbsp;&nbsp;&nbsp;&nbsp;2.2.1. *[Protobuf Image Files](#221-protobuf-image-files)*
 	&nbsp;&nbsp;&nbsp;&nbsp;2.2.2. *[Memory Dump Files](#222-memory-dump-files)*
 	&nbsp;&nbsp;&nbsp;&nbsp;2.2.3. *[Decoding Image Files using go-crit](#223-decoding-image-files-using-go---crit)*
 3. **[Implementation](#3-implementation)**
-	3.1. [CHAT CLI app](#31-chat-cli-app)
+	3.1. [CHAT CLI App](#31-chat-cli-app)
 4. **[Timeline](#4-timeline)**
 	4.1. [Before May 4](#41-before-may-4)
 	4.2. [May 4 - May 28 (Community Bonding Period)](#42-may-4---may-28-community-bonding-period)
 	4.3. [May 29 - July 14 (Phase I)](#43-may-29---july-14-phase-i)
 	4.4. [July 15 - Sep 4 (Phase II)](#44-july-14---sep-4-phase-ii)
 	4.5. [After Sep 4](#45-after-sep-4)
-5. **[Personal information](#5-personal-information)**
+5. **[Personal Information](#5-personal-information)**
 	5.1. [About Me](#51-about-me)
 	5.2. [Open Source Activity](#52-open-source-activity)
 	5.3. [Commitments during GSoC 2023](#53-commitments-during-gsoc-2023)
 
-<br style="line-height:14" />
+<br style="line-height:40" />
 
 ## 1. Abstract
 
@@ -49,7 +49,7 @@ The checkpoint archive is extracted with the help of `tar xf ContainerCheckpoint
 | `*.dump`               | contain metadata about the container (required during restore)                               |
 | `dump.log`             | contains dubug output of CRIU during the process of checkpointing                            |
 | `stats-dump`           | contains data to dump display statistics                                                     |
-| `rootfs-diff.ta`r      | contains all the files that changed on the container's filesystem                            |
+| `rootfs-diff.tar`      | contains all the files that changed on the container's filesystem                            |
 
 Of the above mentioned files and directories, the `rootfs-diff.tar` file and the `checkpoint/` directory are important for analysis of the checkpointed container; the former is for tracking the ***file system changes*** and the latter is for ***analysing the checkpointed processes***.  This solution proposed is focused on providing a tool to help with the latter.
 
@@ -148,11 +148,11 @@ func New(
 }
 ```
 
-### 3.1. CHAT CLI app
+### 3.1. CHAT CLI App
 
-A `cli.go` file will provide a ***standalone binary*** that uses this worker agent to run the CRIT commands as a CLI application, built using [cobra](https://github.com/spf13/cobra). Every command will create a `ChatService` instance with the necessary struct variables and call the respective function through this service.
+A `cli.go` file will provide a ***standalone binary*** that uses this worker agent to run the CHAT commands as a CLI application, built using [cobra](https://github.com/spf13/cobra). Every command will create a `ChatService` instance with the necessary struct variables and call the respective function through this service.
 
-<br style="line-height:28" />
+<br style="line-height:55" />
 
 ## 4. Timeline
 
@@ -190,15 +190,13 @@ A `cli.go` file will provide a ***standalone binary*** that uses this worker age
 - **Aug 25 - Aug 27**: This period serves as a buffer in order to accomodate unexpected delays or emergencies.
 - **Aug 28 - Sep 4 (Phase II evaluation)**: Discuss progress with my mentors and any potential extensions, and what would be acheived during the extended period.
 
-<br style="line-height:2" />
-
 ### 4.5. After Sep 4
 
 - Discuss outcome of the project with my mentors and the plan of action for future contribution.
 - If provided with an extended timeline, discuss in fine detail what the course of action would be during this period.
 - Engage with community members to get feedback on project implementation and discuss add-on features.
 
-## 5. Personal information
+## 5. Personal Information
 
 **Name**: Sankalp Acharya
 **Email**: [sankalpacharya1211@gmail.com](mailto:sankalpacharya1211@gmail.com)
@@ -212,6 +210,8 @@ A `cli.go` file will provide a ***standalone binary*** that uses this worker age
 I am a third year student pursuing my engineering in computer science from [Indian Institute of Technology, Bhilai](https://www.iitbhilai.ac.in/), Raipur, India. My areas of interest include distributed systems, cloud computing, and scalability. I am actively involved in cloud-native open-source projects such as [Meshery](https://layer5.io/).
 
 My interest in applying to this project is due to my prior experience with Golang and containerization technologies such as Docker, K8s, etc. I am deeply interested in learning low-level system design, reading through articles and attending conferences to attain a thorough understanding. I am also interning as a back-end developer at a leading startup in India, wherein I will primarily use Golang and its related tooling ecosystem. My experience with working on multiple Golang projects at scale makes me a suitable candidate for this project.
+
+<br style="line-height:4" />
 
 ### 5.2. Open Source Activity
 
