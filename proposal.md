@@ -38,7 +38,7 @@ This solution is expected to provide a ***tool***  in Go as well as a CLI-implem
 
 Forensic container checkpointing allows the creation of stateful copies of a running container without the container knowing that it is being checkpointed. The copy of the container is then analyzed without the original container being aware of it. At the time of writing this proposal, only ***CRI-O: v1.25*** has support for forensic container checkpointing, which must only be used as a container runtime for a Kubernetes installation. 
 
-In Kubernetes, the the container checkpoint is available as a compressed archive in the form of a  `.tar` file. In the following parts of the proposal, I will be referring to the checkpoint archive as `ContainerCheckpoint.tar`. 
+In Kubernetes, the container checkpoint is available as a compressed archive in the form of a  `.tar` file. In the following parts of the proposal, I will be referring to the checkpoint archive as `ContainerCheckpoint.tar`. 
 
 The checkpoint archive is extracted with the help of `tar xf ContainerCheckpoint.tar`. Extracting the checkpoint archive results in the following files and directories:
 
@@ -209,7 +209,7 @@ A `cli.go` file will provide a ***standalone binary*** that uses this worker age
 
 I am a third year student pursuing my engineering in computer science from [Indian Institute of Technology, Bhilai](https://www.iitbhilai.ac.in/), Raipur, India. My areas of interest include distributed systems, cloud computing, and scalability. I am actively involved in cloud-native open-source projects such as [Meshery](https://layer5.io/).
 
-My interest in applying to this project is due to my prior experience with Golang and containerization technologies such as Docker, K8s, etc. I am deeply interested in learning low-level system design, reading through articles and attending conferences to attain a thorough understanding. I am also interning as a back-end developer at a leading startup in India, wherein I will primarily use Golang and its related tooling ecosystem. My experience with working on multiple Golang projects at scale makes me a suitable candidate for this project.
+My interest in applying to this project is due to my prior experience with Golang and containerization technologies such as Docker, K8s, etc. I am deeply interested in learning low-level system design, reading through articles and attending conferences to attain a thorough understanding. I'm currently interning as a back-end developer at a leading startup in India, wherein I will primarily use Golang and its related tooling ecosystem. My experience with working on multiple Golang projects at scale makes me a suitable candidate for this project.
 
 <br style="line-height:4" />
 
