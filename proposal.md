@@ -245,8 +245,6 @@ I am a third year undergraduate student pursuing my engineering in computer scie
 
 My interest in applying to this project is due to my prior experience with Golang and containerization technologies such as Docker, K8s, etc. I'm deeply interested in learning low-level system design, reading through articles and attending conferences to attain a thorough understanding. I'm currently interning as a back-end developer at a leading startup in India, wherein I will primarily use Golang and its related tooling ecosystem. My experience with working on multiple Golang projects at scale makes me a suitable candidate for this project.
 
-<br style="line-height:4" />
-
 ### 5.2. Open Source Activity
 
 I have been submitting PRs and raising issues in the [criu](https://github.com/checkpoint-restore/criu) repository:
