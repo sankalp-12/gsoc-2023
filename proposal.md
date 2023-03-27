@@ -1,3 +1,20 @@
+<style scoped>
+table {
+  font-size: 8px;
+}
+</style>
+
+<style scoped>
+img
+{
+  display: block;
+  float: none;
+  margin-left:auto;
+  margin-right:auto;
+}
+</style>
+
+
 # Forensic Analysis of Container Checkpoints
 
 **Mentors**: [Radostin Stoyanov](mailto:rstoyanov@fedoraproject.org) [Adrian Reber](mailto:areber@redhat.com)
@@ -12,7 +29,7 @@
 	&nbsp;&nbsp;&nbsp;&nbsp;2.2.2. *[Memory Dump Files](#222-memory-dump-files)*
 	&nbsp;&nbsp;&nbsp;&nbsp;2.2.3. *[Decoding Image Files using go-crit](#223-decoding-image-files-using-go---crit)*
 3. **[Implementation](#3-implementation)**
-	3.1. [CHAT CLI App](#31-chat-cli-app)
+	3.1. [Analyser CLI App](#31-analyser-cli-app)
 4. **[Timeline](#4-timeline)**
 	4.1. [Before May 4](#41-before-may-4)
 	4.2. [May 4 - May 28 (Community Bonding Period)](#42-may-4---may-28-community-bonding-period)
@@ -28,9 +45,13 @@
 
 ## 1. Abstract
 
-CRIU provides a Go-based tool called ***go-crit*** in order to explore and manipulate checkpoint images both as an ***import-and-use*** dependency as well as a ***standalone CLI application***. However, users need to have a thorough understanding of the CRIU image formats to effectively utilise this new feature for analysis. This project aims to extend the [go-criu](https://github.com/checkpoint-restore/go-criu) library with functionalty for forensic analysis of container checkpoints to make this process trivial.
+A container can be checkpointed by container engines like ***Podman*** and ***CRI-O***. A checkpoint archive contains all the data related to a checkpoint, largely as CRIU image files. CRIU provides a Go-based tool called `checkpointctl` to display high level information about these checkpoint archives. CRIU also provides a Go-based tool called `go-crit` in order to explore and manipulate checkpoint images both as an ***import-and-use*** dependency as well as a ***standalone CLI application***. 
 
-This solution is expected to provide a ***tool***  in Go as well as a CLI-implementation to enable security researchers in having a user-friendly experience analysing container checkpoints. This should allow users to perform forensic analysis without having to deeply understand CRIU images.
+However, users need to have a thorough understanding of the CRIU image formats to effectively utilise this new feature for analysis. This project aims to extend the [checkpointctl](https://github.com/checkpoint-restore/checkpointctl) tool with functionalty for forensic analysis of container checkpoints utilising [go-crit](https://github.com/checkpoint-restore/go-criu/tree/master/crit) and significantly enhancing user experience. 
+
+This solution is expected to provide a ***tool*** or a ***set of functionalites*** along with a CLI-implementation as an extension to the current ***checkpointctl*** tool. This should allow users to perform forensic analysis without having to deeply understand CRIU images.
+
+<br style="line-height:60" />
 
 ## 2. Technical Details
 
@@ -39,6 +60,18 @@ This solution is expected to provide a ***tool***  in Go as well as a CLI-implem
 Forensic container checkpointing allows the creation of stateful copies of a running container without the container knowing that it is being checkpointed. The copy of the container is then analyzed without the original container being aware of it. At the time of writing this proposal, only ***CRI-O: v1.25*** has support for forensic container checkpointing, which must only be used as a container runtime for a Kubernetes installation. 
 
 In Kubernetes, the container checkpoint is available as a compressed archive in the form of a  `.tar` file. In the following parts of the proposal, I will be referring to the checkpoint archive as `ContainerCheckpoint.tar`. 
+
+Some initial information about the checkpointed container as well as some statistics about the checkpointing process itself can be displayed using `checkpointctl show ContainerCheckpoint.tar --print-stats`. This gives the following output for a ***MongoDB*** container.
+
+| CONTAINER | IMAGE               | ID           | RUNTIME | CREATED             | ENGINE | IP          | CHKPT SIZE | ROOT FS DIFF SIZE |
+|-----------|---------------------|--------------|---------|---------------------|--------|-------------|------------|-------------------|
+| mongo     | mongo:4.2.16-bionic | dbfa8d819af4 | runc    | 2023-03-10T08:01:32 | CRI-O  | 10.04.08.22 | 7.9 MiB    | 0.8 KiB           |
+
+***CRIU dump statistics***
+
+| FREEZING TIME | FROZEN TIME | MEMDUMP TIME | MEMWRITE TIME | PAGES SCANNED | PAGES WRITTEN |
+|---------------|-------------|--------------|---------------|---------------|---------------|
+| 98881 us      | 101265 us   | 9773 us      | 5901 us       | 4012          | 1262          | 
 
 The checkpoint archive is extracted with the help of `tar xf ContainerCheckpoint.tar`. Extracting the checkpoint archive results in the following files and directories:
 
@@ -52,7 +85,6 @@ The checkpoint archive is extracted with the help of `tar xf ContainerCheckpoint
 | `rootfs-diff.tar`      | contains all the files that changed on the container's filesystem                            |
 
 Of the above mentioned files and directories, the `rootfs-diff.tar` file and the `checkpoint/` directory are important for analysis of the checkpointed container; the former is for tracking the ***file system changes*** and the latter is for ***analysing the checkpointed processes***.  This solution proposed is focused on providing a tool to help with the latter.
-
 
 ### 2.2. Analysing the `checkpoint/` Directory
 
@@ -108,22 +140,22 @@ type CriuEntry struct {
 
 ## 3. Implementation
 
-A new tool named ***go-chat*** (Checkpoint Analysis Tool) will be created as a new library in the [go-criu](https://github.com/checkpoint-restore/go-criu) repository. This basic library will consist of standalone files for each of the analysis operations intended to to provided. By leveraging the concept of interfaces in Go, a ***common worker agent*** will be able to call all operation functions. This interface can simply be extended in the future to add new functionalities to ***go-chat***.
+A new tool named ***cc-analyser*** (Container Checkpoint Analyser) will be created as a new library in the [checkpointctl](https://github.com/checkpoint-restore/checkpointctl) repository. This basic library will consist of standalone files for each of the analysis operation intended to be provided. By leveraging the concept of interfaces in Go, a ***common worker agent*** will be able to call all operation functions. This interface can simply be extended in the future to add new functionalities to ***cc-analyser***.
 
-![Chat and ChatService types](./chat.jpg "Chat and ChatService types")
+![Analyser and AnalyserService types](./analyser.jpg "Analyser and AnalyserService types")
 
 All interface functions will be ***exportable*** so that they can be called through imports. The structure of the code is as follows:
 
 ```go
-// chat.go
-type Chat struct {
+// analyser.go
+type Analyser struct {
 	inputDirectoryPath string
 	outputFilePath string
 	pretty bool
 	noPayload bool
 }
 
-type ChatService interface {
+type AnalyserService interface {
 	Processes()	// Show all running processes with respective PID, PPID, PGID, SID, etc.
 	CoreInfo()	// Show core process info  
 	Files()	// Show all open files unless specified
@@ -138,8 +170,8 @@ type ChatService interface {
 func New(
 	inputDirectoryPath, outputFilePath,
 	pretty, noPayload bool
-) *ChatService {
-	return &Chat{
+) *AnalyserService {
+	return &Analyser{
 		inputDirectoryPath: inputDirectoryPath,
 		outputFilePath: outputFilePath,
 		pretty: pretty,
@@ -148,11 +180,13 @@ func New(
 }
 ```
 
-### 3.1. CHAT CLI App
+### 3.1. Analyser CLI App
 
-A `cli.go` file will provide a ***standalone binary*** that uses this worker agent to run the CHAT commands as a CLI application, built using [cobra](https://github.com/spf13/cobra). Every command will create a `ChatService` instance with the necessary struct variables and call the respective function through this service.
+A `cli.go` file will provide a ***standalone binary*** that uses this worker agent to run the Analyser commands as a CLI application, built using [cobra](https://github.com/spf13/cobra). Every command will create a `AnalyserService` instance with the necessary struct variables and call the respective function through this service.
 
-<br style="line-height:55" />
+Alternatively, the CLI-implementation for the ***cc-analyser*** can be integrated with the existing CLI-implementation of `checkpointctl` tool (in the file `checkpointctl.go`), which also uses [cobra](https://github.com/spf13/cobra).  
+
+<br style="line-height:60" />
 
 ## 4. Timeline
 
@@ -160,7 +194,7 @@ A `cli.go` file will provide a ***standalone binary*** that uses this worker age
 
 ### 4.1. Before May 4
 
-- Understand the Go implementation of CRIT in detail as well as any other relevant code necessary to implement the solution.
+- Understand the Go implementation of ***crit*** and ***checkpointctl*** in detail as well as any other relevant code necessary to implement the solution.
 - Go through relevant articles on forensic analysis.
 - Work on a Proof-of-Concept prototype of the basic components to be implemented.
 
@@ -171,21 +205,21 @@ A `cli.go` file will provide a ***standalone binary*** that uses this worker age
 
 ### 4.3. May 29 - July 14 (Phase I)
 
-- **May 29 - June 4**: Implement the basic structs and functions in `chat.go`. They are the building blocks that will be reused across all command functions.
-- **June 5 - June 11**: Implement the `chat Process()` function and ensure it works and lists all running processes. Create the `chat` CLI app and provide `process` as a command. Add necessary unit tests.
-- **June 12 - June 18**: Implement the `chat CoreInfo()` function and add `coreinfo` as a command in the CLI app. Add necessary unit tests.
-- **June 19 - June 25**: Implement the `chat GhostFiles()` function and add `ghostfiles` as a command in the CLI app. Add necessary unit tests.  
-- **June 26 - July 2**: Implement the `chat Files()` function and add `files` as a command in the CLI app. Add necessary unit tests.
-- **July 3 - July 9**: Implement the `chat FileDescriptors()` function and add `filedesc` as a command in the CLI app. Add necessary unit tests.
+- **May 29 - June 4**: Implement the basic structs and functions in `analyser.go`. They are the building blocks that will be reused across all command functions.
+- **June 5 - June 11**: Implement the `analyser Process()` function and ensure it works and lists all running processes. Create the `analyser` CLI app and provide `process` as a command. Add necessary unit tests.
+- **June 12 - June 18**: Implement the `analyser CoreInfo()` function and add `coreinfo` as a command in the CLI app. Add necessary unit tests.
+- **June 19 - June 25**: Implement the `analyser GhostFiles()` function and add `ghostfiles` as a command in the CLI app. Add necessary unit tests.  
+- **June 26 - July 2**: Implement the `analyser Files()` function and add `files` as a command in the CLI app. Add necessary unit tests.
+- **July 3 - July 9**: Implement the `analyser FileDescriptors()` function and add `filedesc` as a command in the CLI app. Add necessary unit tests.
 - **July 10 - July 14 (Phase I evaluation)**: Discuss progress with my mentors and any potential change of plan going forward.
 
 ### 4.4. July 14 - Sep 4 (Phase II)
 
-- **July 14 - July 20**: Implement the `chat MemoryPages()` function and add `mempages` as a command in the CLI app. Add necessary unit tests.
-- **July 21 - July 27**: Implement the `chat Sockets()` function and add `sockets` as a command in the CLI app. Add necessary unit tests.
-- **July 28 - Aug 3**: Implement the `chat Pipes()` function and add `pipes` as a command in the CLI app. Add necessary unit tests.
-- **Aug 4 - Aug 10**: Implement the `chat Fifo()` function and add `fifo` as a command in the CLI app. Add necessary unit tests.
-- **Aug 11 - Aug 17**: Add necessary changes to the Makefile, test suite, and build ecosystem of go-criu in order to completely integrate the new code into the library. 
+- **July 14 - July 20**: Implement the `analyser MemoryPages()` function and add `mempages` as a command in the CLI app. Add necessary unit tests.
+- **July 21 - July 27**: Implement the `analyser Sockets()` function and add `sockets` as a command in the CLI app. Add necessary unit tests.
+- **July 28 - Aug 3**: Implement the `analyser Pipes()` function and add `pipes` as a command in the CLI app. Add necessary unit tests.
+- **Aug 4 - Aug 10**: Implement the `analyser Fifo()` function and add `fifo` as a command in the CLI app. Add necessary unit tests.
+- **Aug 11 - Aug 17**: Add necessary changes to the Makefile, test suite, and build ecosystem of ***checkpointctl*** in order to completely integrate the new code into the library. 
 - **Aug 18 - Aug 24**: Add documentation and examples to the project README and the CRIU [website](https://criu.org).
 - **Aug 25 - Aug 27**: This period serves as a buffer in order to accomodate unexpected delays or emergencies.
 - **Aug 28 - Sep 4 (Phase II evaluation)**: Discuss progress with my mentors and any potential extensions, and what would be acheived during the extended period.
@@ -201,23 +235,24 @@ A `cli.go` file will provide a ***standalone binary*** that uses this worker age
 **Name**: Sankalp Acharya
 **Email**: [sankalpacharya1211@gmail.com](mailto:sankalpacharya1211@gmail.com)
 **GitHub**: [sankalp-12](https://github.com/sankalp-12)
-**LinkedIn**: [Sankalp Acharya](https://www.linkedin.com/in/sankalp-acharya-473588200/)
+**LinkedIn**: [Sankalp Acharya](https://www.linkedin.com/in/sankalpacharya/)
 **Location**: Bengaluru, India
 **Timezone**: GMT +0530
 
 ### 5.1. About Me
 
-I am a third year student pursuing my engineering in computer science from [Indian Institute of Technology, Bhilai](https://www.iitbhilai.ac.in/), Raipur, India. My areas of interest include distributed systems, cloud computing, and scalability. I am actively involved in cloud-native open-source projects such as [Meshery](https://layer5.io/).
+I am a third year undergraduate student pursuing my engineering in computer science from [Indian Institute of Technology, Bhilai](https://www.iitbhilai.ac.in/), Raipur, India. My areas of interest include distributed systems, cloud computing, and scalability. I am actively involved in cloud-native open-source projects such as [Meshery](https://layer5.io/).
 
-My interest in applying to this project is due to my prior experience with Golang and containerization technologies such as Docker, K8s, etc. I am deeply interested in learning low-level system design, reading through articles and attending conferences to attain a thorough understanding. I'm currently interning as a back-end developer at a leading startup in India, wherein I will primarily use Golang and its related tooling ecosystem. My experience with working on multiple Golang projects at scale makes me a suitable candidate for this project.
+My interest in applying to this project is due to my prior experience with Golang and containerization technologies such as Docker, K8s, etc. I'm deeply interested in learning low-level system design, reading through articles and attending conferences to attain a thorough understanding. I'm currently interning as a back-end developer at a leading startup in India, wherein I will primarily use Golang and its related tooling ecosystem. My experience with working on multiple Golang projects at scale makes me a suitable candidate for this project.
 
 <br style="line-height:4" />
 
 ### 5.2. Open Source Activity
 
-I have started submitting PRs and raising issues in the [criu](https://github.com/checkpoint-restore/criu) repository:
+I have been submitting PRs and raising issues in the [criu](https://github.com/checkpoint-restore/criu) repository:
 
 - PR: [Optimized shell code with <'s (instead of cat + |)](https://github.com/checkpoint-restore/criu/pull/2125)
+- PR: [Distinguish criu crash from criu fail in ZDTM](https://github.com/checkpoint-restore/criu/pull/2140)
 - Issue: [Cirrus CI / Vagrant Fedora based test fails](https://github.com/checkpoint-restore/criu/issues/2129)
 
 ### 5.3. Commitments during GSoC 2023
