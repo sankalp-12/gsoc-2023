@@ -61,7 +61,7 @@ Forensic container checkpointing allows the creation of stateful copies of a run
 
 In Kubernetes, the container checkpoint is available as a compressed archive in the form of a  `.tar` file. In the following parts of the proposal, I will be referring to the checkpoint archive as `ContainerCheckpoint.tar`. 
 
-Some initial information about the checkpointed container as well as some statistics about the checkpointing process itself can be displayed using `checkpointctl show ContainerCheckpoint.tar --print-stats`. This gives the following output for a ***MongoDB*** container.
+Some initial information about the checkpointed container as well as some statistics about the checkpointing process itself can be displayed using `checkpointctl show ContainerCheckpoint.tar --print-stats`. This command gives the following output for a ***MongoDB*** container.
 
 | CONTAINER | IMAGE               | ID           | RUNTIME | CREATED             | ENGINE | IP          | CHKPT SIZE | ROOT FS DIFF SIZE |
 |-----------|---------------------|--------------|---------|---------------------|--------|-------------|------------|-------------------|
@@ -88,7 +88,7 @@ Of the above mentioned files and directories, the `rootfs-diff.tar` file and the
 
 ### 2.2. Analysing the `checkpoint/` Directory
 
-The data created by CRIU while checkpointing processes in the container is stored in the `checkpoint/` directory. Thus, the content in this directory consists of CRIU images, which can be analysed with the help of [go-crit](https://github.com/checkpoint-restore/go-criu/crit). Currently, CRIU images are of three types:
+The data created by CRIU while checkpointing processes in the container is stored in the `checkpoint/` directory. Thus, the content in this directory consists of CRIU images, which can be analysed with the help of [go-crit](https://github.com/checkpoint-restore/go-criu/tree/master/crit). Currently, CRIU images are of three types:
 
 - CRIU-specific files stored in the protobuf format
 - Memory dump files
@@ -111,7 +111,7 @@ These files follow a standard defined format for storing data. Every file begins
 | Size<sub>N</sub>                    | 4                              |
 | Payload<sub>N</sub>                 | Size<sub>N</sub>               |
 
-There exists a large number of PB image files, each containing specific information about the checkpointed container. 
+There exists a large number of protobuf image files, each containing specific information about the checkpointed container. 
 
 #### 2.2.2. Memory Dump Files
 
@@ -119,7 +119,7 @@ These files are of two types - ***pagemap***, and ***pages***. The pagemap file 
 
 #### 2.2.3. Decoding Image Files using go-crit
 
-The [go-crit](https://github.com/checkpoint-restore/go-criu/crit) helps decode the above mentioned images from Binary to JSON format and store them in go-structs for analysis as shown below:
+The [go-crit](https://github.com/checkpoint-restore/go-criu/tree/master/crit) helps decode the above mentioned images from Binary to JSON format and store them in go-structs for analysis as shown below:
 
 ```go
 // image.go
