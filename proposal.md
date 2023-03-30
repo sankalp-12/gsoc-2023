@@ -163,7 +163,7 @@ type AnalyserService interface {
 	FileDescriptors()	// Show all open file descriptors unless specified
 	MemoryPages()	// Show memory mapping of all processes unless specified
 	Sockets()	// Show all sockets unless specified
-	Pipes()	// Show all pipes unless specified4
+	Pipes()	// Show all pipes unless specified
 	Fifo()		// Show all named pipes unless specified
 }
 
