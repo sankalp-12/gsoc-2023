@@ -27,7 +27,7 @@ img
 	2.2. [Analysing the `checkpoint/` Directory](#22-analysing-the-checkpoint-directory)
 	&nbsp;&nbsp;&nbsp;&nbsp;2.2.1. *[Protobuf Image Files](#221-protobuf-image-files)*
 	&nbsp;&nbsp;&nbsp;&nbsp;2.2.2. *[Memory Dump Files](#222-memory-dump-files)*
-	&nbsp;&nbsp;&nbsp;&nbsp;2.2.3. *[Decoding Image Files using go-crit](#223-decoding-image-files-using-go---crit)*
+	&nbsp;&nbsp;&nbsp;&nbsp;2.2.3. *[Decoding Image Files using go-crit](#223-decoding-image-files-using-go-crit)*
 3. **[Implementation](#3-implementation)**
 	3.1. [Analyser CLI App](#31-analyser-cli-app)
 4. **[Timeline](#4-timeline)**
